@@ -1,7 +1,6 @@
-import { Text, View, Image, StyleSheet, Pressable } from "react-native";
+import { Text, View, Image, StyleSheet, Pressable, Button } from "react-native";
 import { Headertitle } from "@/components/headerTitle";
 import { Link } from "expo-router";
-
 
 export default function Index() {
   return (
@@ -29,6 +28,13 @@ export default function Index() {
           </Pressable>
         </Link>
       </View>
+      <View style={style.footer}>
+        <Link href="/(todo)" asChild>
+          <Pressable>
+            <Text>Access Todo Offline</Text>
+          </Pressable>
+        </Link>
+      </View>
     </View>
   );
 }
@@ -39,6 +45,7 @@ const style = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 10,
+    position: "relative",
   },
   text: {
     fontSize: 20,
@@ -59,5 +66,15 @@ const style = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
     width: 100,
+  },
+  bottom: {
+    color: "black",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    alignItems: "center",
+    paddingBottom: 10,
   },
 });
