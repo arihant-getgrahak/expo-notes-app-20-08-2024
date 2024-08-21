@@ -1,6 +1,6 @@
 import { View, Text, SafeAreaView, Button, StyleSheet } from "react-native";
 import { Headertitle } from "@/components/headerTitle";
-import { useController, useForm } from "react-hook-form";
+import {  useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/Input";
