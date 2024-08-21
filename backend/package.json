@@ -2,11 +2,11 @@
   "name": "todo-backend",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "postinstall": "prisma generate"
   },
   "repository": {
     "type": "git",
@@ -34,6 +34,7 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "express-async-handler": "^1.2.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "prisma": "^5.18.0"
   }

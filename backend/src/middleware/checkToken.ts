@@ -1,5 +1,5 @@
-import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
+const jwt = require("jsonwebtoken");
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 import { Request, Response } from "express";
 

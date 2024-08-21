@@ -1,7 +1,10 @@
-import bcrypt from "bcrypt";
-import { generateToken } from "../utils/generateToken";
+// import bcrypt from "bcrypt";
+const bcrypt = require("bcrypt");
+// import { generateToken } from "../utils/generateToken";
+const generateToken = require("../utils/generateToken");
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+// import { PrismaClient } from "@prisma/client";
+const {PrismaClient} = require("@prisma/client");
 const prisma = new PrismaClient();
 
 export const register = async (req: Request, res: Response) => {

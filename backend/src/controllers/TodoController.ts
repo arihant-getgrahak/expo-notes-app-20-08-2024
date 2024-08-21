@@ -124,7 +124,7 @@ export const getAlltodo = async (req: Request, res: Response) => {
 
     const todos = await prisma.todo.findMany({
       where: {
-      userId: userId,
+        userId: userId,
       },
     });
 
