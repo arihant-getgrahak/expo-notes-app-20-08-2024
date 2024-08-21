@@ -6,19 +6,25 @@ import DeleteOutlined from "react-native-vector-icons/AntDesign";
 import { ModalView } from "@/components/modal";
 import { useEffect, useState } from "react";
 import { getAllTodo, deleteTodo } from "@/helper/api/todo";
+import { getUserDetails } from "@/helper/tokenHelper";
 
 type Todo = {
   id: string;
   title: string;
   content: string;
 };
-
+type User = {
+  id: string;
+  name: string;
+  email: string;
+};
 export default function Todo() {
   const [modalVisible, setModalVisible] = useState(false);
   const [todo, settodo] = useState<Todo[] | null>([]);
   const [selectedTodo, setSelectedTodo] = useState<string | null>(null);
   const [update, setUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   const handleEdit = (id: string) => {
     setSelectedTodo(id);
@@ -33,7 +39,6 @@ export default function Todo() {
   const handleDelete = async (id: string) => {
     async function Deletetodo() {
       const res = await deleteTodo(id);
-      console.log(res?.data);
       if (res?.status != 200) {
         alert("Error deleting data");
         return;
@@ -53,9 +58,14 @@ export default function Todo() {
   };
 
   useEffect(() => {
+    async function userDetails() {
+      const res = await getUserDetails();
+      setUser(res);
+    }
+    userDetails();
     async function fetchAllTodo() {
       setLoading(true);
-      const res = await getAllTodo("cm03eyktp0000fshn2l5jqu70");
+      const res = await getAllTodo("dsdsdsd");
       if (res?.status != 200) {
         alert("Error fetching data");
         setLoading(false);

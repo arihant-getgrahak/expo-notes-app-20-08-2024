@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-
+import { isLogin } from "@/helper/tokenHelper";
 const url = "https://todo-backend-swart.vercel.app/api/todo";
 
 export const getAllTodo = async (id: string) => {
@@ -41,11 +41,11 @@ export const createTodo = async (data: any) => {
 };
 export const updateTodo = async (data: any) => {
   try {
+    const token = await isLogin();
     const response = await axios.put(`${url}/update`, data, {
       headers: {
-        // "Content-Type": "application/json",
-        Authorization:
-          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtMDNudDF2OTAwMDBqNTNvYTJmbWF4NHEiLCJlbWFpbCI6ImFyQGdhLmNvbSIsImlhdCI6MTcyNDIzMzQwNSwiZXhwIjoxNzI2ODI1NDA1fQ.IDK_vLD-KLv6y9JkKDw3qsL5Sfo2kYcv63rpNLSSkr0",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
     });
     return response;
@@ -59,11 +59,11 @@ export const updateTodo = async (data: any) => {
 
 export const deleteTodo = async (data: any) => {
   try {
+    const token = await isLogin();
     const response = await axios.delete(`${url}/delete/${data}`, {
       headers: {
         "Content-Type": "application/json",
-        Authorization:
-          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtMDNudDF2OTAwMDBqNTNvYTJmbWF4NHEiLCJlbWFpbCI6ImFyQGdhLmNvbSIsImlhdCI6MTcyNDIzMzQwNSwiZXhwIjoxNzI2ODI1NDA1fQ.IDK_vLD-KLv6y9JkKDw3qsL5Sfo2kYcv63rpNLSSkr0",
+        Authorization: `Bearer ${token}`,
       },
     });
     return response;

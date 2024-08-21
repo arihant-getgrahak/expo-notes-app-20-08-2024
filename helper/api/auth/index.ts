@@ -16,7 +16,7 @@ export const login = async (data: any) => {
 
 export const signup = async (data: any) => {
   try {
-    const response = await axios.post(`${url}/signup`, data);
+    const response = await axios.post(`${url}/register`, data);
     return response;
   } catch (err) {
     const error = err as AxiosError;

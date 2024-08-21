@@ -1,11 +1,15 @@
 import { View, Text, SafeAreaView, Button, StyleSheet } from "react-native";
 import { Headertitle } from "@/components/headerTitle";
-import {  useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/Input";
+import { login } from "@/helper/api/auth";
+import { saveToken, saveUserDetails } from "@/helper/tokenHelper";
+import { useRouter } from "expo-router";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const schema = z.object({
     email: z.string().email({ message: "Invalid email" }),
     password: z
@@ -20,8 +24,17 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data: any) => {
-    alert("Form Submitted: " + JSON.stringify(data));
+  const onSubmit = async (data: any) => {
+    const res = await login(data);
+    if (res?.status != 200) {
+      alert(res?.data.error);
+      return;
+    }
+    await saveToken(res?.data.token);
+    res.data.user.password = undefined;
+    await saveUserDetails(res?.data.user);
+    alert("User Login successfully");
+    router.push("/(todo)");
   };
   return (
     <SafeAreaView style={style.sav}>
@@ -56,7 +69,7 @@ export default function RegisterPage() {
               {errors.password.message?.toString()}
             </Text>
           )}
-        <Button title="LogIn" onPress={handleSubmit(onSubmit)} />
+          <Button title="LogIn" onPress={handleSubmit(onSubmit)} />
         </View>
       </View>
     </SafeAreaView>

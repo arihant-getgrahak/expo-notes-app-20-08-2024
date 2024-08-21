@@ -1,14 +1,17 @@
 import { View, Text, SafeAreaView, Button, StyleSheet } from "react-native";
 import { Headertitle } from "@/components/headerTitle";
-import { useController, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/Input";
+import { signup } from "@/helper/api/auth";
+import { useRouter } from "expo-router";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const schema = z.object({
     email: z.string().email({ message: "Invalid email" }),
-    username: z
+    name: z
       .string()
       .min(3, { message: "Username must be at least 3 characters" }),
     password: z
@@ -23,8 +26,15 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data: any) => {
-    alert("Form Submitted: " + JSON.stringify(data));
+  const onSubmit = async (data: any) => {
+
+    const res = await signup(data);
+    if (res?.status != 200) {
+      alert(res?.data);
+      return;
+    }
+    alert("User Register successfully");
+    router.push("/auth/login");
   };
   return (
     <SafeAreaView style={style.sav}>
@@ -53,11 +63,11 @@ export default function RegisterPage() {
             inputMode="text"
             style={style.input}
             placeholder="johnDoe"
-            name="username"
+            name="name"
           />
-          {errors.username && (
+          {errors.name && (
             <Text style={{ color: "red" }}>
-              {errors.username.message?.toString()}
+              {errors.name.message?.toString()}
             </Text>
           )}
         </View>
@@ -74,7 +84,7 @@ export default function RegisterPage() {
               {errors.password.message?.toString()}
             </Text>
           )}
-        <Button title="SignUp" onPress={handleSubmit(onSubmit)} />
+          <Button title="SignUp" onPress={handleSubmit(onSubmit)} />
         </View>
       </View>
     </SafeAreaView>
