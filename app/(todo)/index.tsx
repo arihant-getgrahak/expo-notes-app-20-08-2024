@@ -7,6 +7,7 @@ import { ModalView } from "@/components/modal";
 import { useEffect, useState } from "react";
 import { getAllTodo, deleteTodo } from "@/helper/api/todo";
 import { getUserDetails } from "@/helper/tokenHelper";
+import { AddModalView } from "@/components/addTodo";
 
 type Todo = {
   id: string;
@@ -18,9 +19,11 @@ type User = {
   name: string;
   email: string;
 };
+
 export default function Todo() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [todo, settodo] = useState<Todo[] | null>([]);
+  const [addTodoModalVisible, setAddTodoModalVisible] = useState(false);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [selectedTodo, setSelectedTodo] = useState<string | null>(null);
   const [update, setUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,46 +39,56 @@ export default function Todo() {
     setSelectedTodo(null);
   };
 
+  const handleAddTodo = () => {
+    setAddTodoModalVisible(!addTodoModalVisible);
+  };
+
   const handleDelete = async (id: string) => {
-    async function Deletetodo() {
-      const res = await deleteTodo(id);
-      if (res?.status != 200) {
-        alert("Error deleting data");
-        return;
-      }
-      alert("Data deleted successfully");
-      setUpdate(!update);
-    }
-    // alert("Delete: " + id);
-    Alert.alert("Do you want to delete this Note?", "Press OK to confirm", [
+    Alert.alert("Delete Confirmation", "Do you want to delete this note?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: "Cancel",
-        onPress: () => console.log("Cancel Pressed"),
-        style: "cancel",
+        text: "OK",
+        onPress: async () => {
+          try {
+            const res = await deleteTodo(id);
+            if (res?.status !== 200) {
+              Alert.alert("Error", "Failed to delete the todo.");
+              return;
+            }
+            Alert.alert("Success", "Todo deleted successfully.");
+            setUpdate(!update);
+          } catch (error) {
+            Alert.alert("Error", "An unexpected error occurred.");
+          }
+        },
       },
-      { text: "OK", onPress: () => Deletetodo() },
     ]);
   };
 
   useEffect(() => {
-    async function userDetails() {
-      const res = await getUserDetails();
-      setUser(res);
-    }
-    userDetails();
-    async function fetchAllTodo() {
-      setLoading(true);
-      const res = await getAllTodo("dsdsdsd");
-      if (res?.status != 200) {
-        alert("Error fetching data");
+    const fetchUserDetailsAndTodos = async () => {
+      try {
+        const userDetails = await getUserDetails();
+        setUser(userDetails);
+
+        if (userDetails?.id) {
+          setLoading(true);
+          const res = await getAllTodo(userDetails.id);
+          if (res?.status !== 200) {
+            alert(res?.data.error);
+            setLoading(false);
+            return;
+          }
+          setTodos(res?.data.todos || []);
+          setLoading(false);
+        }
+      } catch (error) {
+        Alert.alert("Error", "An unexpected error occurred.");
         setLoading(false);
-        return;
       }
-      // console.log(res?.data);
-      settodo(res?.data.todos);
-      setLoading(false);
-    }
-    fetchAllTodo();
+    };
+
+    fetchUserDetailsAndTodos();
   }, [update]);
 
   return (
@@ -85,33 +98,30 @@ export default function Todo() {
       <View style={styles.alltodo}>
         <View style={styles.heading}>
           <Text style={styles.todoText}>Todo</Text>
-          <Button title="Add Todo" onPress={() => alert("Add Todo clicked")} />
+          <Button title="Add Todo" onPress={handleAddTodo} />
         </View>
         {loading ? (
           <Text>Loading...</Text>
         ) : (
-          <>
-            {todo &&
-              todo.map((data) => (
-                <View key={data.id} style={styles.todomain}>
-                  <View style={styles.todo}>
-                    <Text style={styles.title}>{data.title}</Text>
-                    <Text style={styles.desc}>{data.content}</Text>
-                    <Link href={`./todo/${data.id}`} asChild>
-                      <Text style={styles.read}>Read More</Text>
-                    </Link>
-                  </View>
-                  <View style={styles.todoBtn}>
-                    <Pressable onPress={() => handleEdit(data.id)}>
-                      <Pencil name="edit" size={20} />
-                    </Pressable>
-                    <Pressable onPress={() => handleDelete(data.id)}>
-                      <DeleteOutlined name="delete" size={20} />
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-          </>
+          todos.map((data) => (
+            <View key={data.id} style={styles.todomain}>
+              <View style={styles.todo}>
+                <Text style={styles.title}>{data.title}</Text>
+                <Text style={styles.desc}>{data.content}</Text>
+                <Link href={`./todo/${data.id}`} asChild>
+                  <Text style={styles.read}>Read More</Text>
+                </Link>
+              </View>
+              <View style={styles.todoBtn}>
+                <Pressable onPress={() => handleEdit(data.id)}>
+                  <Pencil name="edit" size={20} />
+                </Pressable>
+                <Pressable onPress={() => handleDelete(data.id)}>
+                  <DeleteOutlined name="delete" size={20} />
+                </Pressable>
+              </View>
+            </View>
+          ))
         )}
       </View>
       {selectedTodo !== null && (
@@ -120,6 +130,13 @@ export default function Todo() {
           modalVisible={modalVisible}
           closeModal={closeModal}
           setUpdate={setUpdate}
+        />
+      )}
+      {addTodoModalVisible && (
+        <AddModalView
+          modalVisible={addTodoModalVisible}
+          setUpdate={setUpdate}
+          closeModal={() => setAddTodoModalVisible(false)}
         />
       )}
     </View>

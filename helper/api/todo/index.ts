@@ -28,9 +28,19 @@ export const getSpecificTodo = async (id: string) => {
   }
 };
 
-export const createTodo = async (data: any) => {
+export const createTodo = async (data: {
+  title: string;
+  content: string;
+  userId: string;
+}) => {
   try {
-    const response = await axios.post(`${url}/add`, data);
+    const token = await isLogin();
+    const response = await axios.post(`${url}/add`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response;
   } catch (err) {
     const error = err as AxiosError;
