@@ -1,38 +1,57 @@
+import React, { useEffect, useState } from "react";
 import { Modal, StyleSheet, View, Text, Button } from "react-native";
-import { Data } from "@/lib/PostData";
 import { Input } from "./Input";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FieldValue, useForm } from "react-hook-form";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { updateTodo, getSpecificTodo } from "@/helper/api/todo";
 
 type Todo = {
-  id: number;
+  id: string;
   title: string;
   content: string;
 };
 
-type ModalViewProps = {
-  selectedTodo: Todo;
+const schema = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+  content: z.string().min(1, { message: "Content is required" }),
+});
+
+interface ModalViewProps {
+  selectedTodo: string;
   modalVisible: boolean;
   closeModal: () => void;
-  setTodos: Dispatch<SetStateAction<Todo | null>>;
-};
-
-const schema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  content: z
-    .string()
-    .min(6, { message: "Content must be at least 6 characters" }),
-});
+}
 
 export const ModalView: React.FC<ModalViewProps> = ({
   selectedTodo,
   modalVisible,
   closeModal,
-  setTodos,
-}: ModalViewProps) => {
-  const [data, setData] = useState<Todo | undefined>();
+}) => {
+  const [data, setData] = useState<Todo | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchSpecificTodo = async () => {
+      setLoading(true);
+      try {
+        const res = await getSpecificTodo(selectedTodo);
+        if (res?.status === 200) {
+          setData(res.data.todo);
+        } else {
+          alert("Error fetching data");
+        }
+      } catch (error) {
+        alert("An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (selectedTodo) {
+      fetchSpecificTodo();
+    }
+  }, [selectedTodo]);
 
   const {
     control,
@@ -42,72 +61,81 @@ export const ModalView: React.FC<ModalViewProps> = ({
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: "",
-      content: "",
+      title: data?.title || "",
+      content: data?.content || "",
     },
   });
 
   useEffect(() => {
-    const editTodo = Data.find((item) => item.id === selectedTodo.id);
-    setData(editTodo);
-    if (editTodo) {
-      reset(editTodo);
-    }
-  }, [selectedTodo, reset]);
+    reset({
+      title: data?.title || "",
+      content: data?.content || "",
+    });
+  }, [data, reset]);
 
-  const onSubmit = (formData: any) => {
-    const updatedata = {
-      id: selectedTodo.id,
-      title: formData.title,
-      content: formData.content,
-    };
-    Data.map((item) =>
-      item.id === selectedTodo.id ? { ...item, ...updatedata } : item
-    );
-    const updateddData = Data.find((item) => item.id === selectedTodo.id);
-    setTodos(updateddData!);
-    alert("Form Submitted: " + JSON.stringify(formData));
-    closeModal();
+  const onSubmit = async (formData: z.infer<typeof schema>) => {
+    try {
+      const sendData = {
+        title: formData.title,
+        content: formData.content,
+        titleId: selectedTodo,
+      };
+      const res = await updateTodo(sendData);
+      if (res?.status === 200) {
+        setData(res.data.todo);
+      } else {
+        console.log(res)
+        alert("Error updating data");
+      }
+      closeModal();
+    } catch (error) {
+      alert("An error occurred while updating the todo");
+    }
   };
 
   return (
     <Modal
       animationType="slide"
-      transparent={true}
+      transparent
       visible={modalVisible}
       onRequestClose={closeModal}
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          <View>
-            <Text>Title</Text>
-            <Input
-              name="title"
-              control={control}
-              inputMode="text"
-              style={styles.input}
-            />
-            {errors.title && (
-              <Text style={{ color: "red" }}>
-                {errors.title.message?.toString()}
-              </Text>
-            )}
-          </View>
-          <View>
-            <Text>Description</Text>
-            <Input
-              name="content"
-              control={control}
-              inputMode="text"
-              style={styles.input}
-            />
-            {errors.content && (
-              <Text style={{ color: "red" }}>
-                {errors.content.message?.toString()}
-              </Text>
-            )}
-          </View>
-          <Button title="Edit" onPress={handleSubmit(onSubmit)} />
+          {loading ? (
+            <Text>Loading...</Text>
+          ) : (
+            <>
+              <View>
+                <Text>Title</Text>
+
+                <Input
+                  name="title"
+                  control={control}
+                  inputMode="text"
+                  style={styles.input}
+                />
+
+                {errors.title && (
+                  <Text style={styles.errorText}>{errors.title.message}</Text>
+                )}
+              </View>
+              <View>
+                <Text>Description</Text>
+                <Input
+                  name="content"
+                  control={control}
+                  inputMode="text"
+                  style={styles.input}
+                />
+
+                {errors.content && (
+                  <Text style={styles.errorText}>{errors.content.message}</Text>
+                )}
+              </View>
+              <Button title="Edit" onPress={handleSubmit(onSubmit)} />
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -136,5 +164,8 @@ const styles = StyleSheet.create({
     width: "80%",
     height: "40%",
     justifyContent: "center",
+  },
+  errorText: {
+    color: "red",
   },
 });

@@ -5,19 +5,22 @@ import { Data } from "@/lib/PostData";
 import Pencil from "react-native-vector-icons/AntDesign";
 import DeleteOutlined from "react-native-vector-icons/AntDesign";
 import { ModalView } from "@/components/modal";
-import { useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
+import { getAllTodo } from "@/helper/api/todo";
+
 type Todo = {
-  id: number;
+  id: string;
   title: string;
   content: string;
 };
 
 export default function Todo() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [todo, settodo] = useState<Todo[] | null>([]);
+  const [selectedTodo, setSelectedTodo] = useState<string | null>(null);
 
-  const handleEdit = (data: Todo) => {
-    setSelectedTodo(Data.find((item) => item.id === data.id)!);
+  const handleEdit = (id: string) => {
+    setSelectedTodo(id);
     setModalVisible(true);
   };
 
@@ -26,10 +29,23 @@ export default function Todo() {
     setSelectedTodo(null);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     alert("Delete: " + id);
     // Add deletion logic here if necessary
   };
+
+  useEffect(() => {
+    async function fetchAllTodo() {
+      const res = await getAllTodo("cm03eyktp0000fshn2l5jqu70");
+      if (res?.status != 200) {
+        alert("Error fetching data");
+        return;
+      }
+      // console.log(res?.data);
+      settodo(res?.data.todos);
+    }
+    fetchAllTodo();
+  }, []);
 
   return (
     <View style={styles.main}>
@@ -40,31 +56,31 @@ export default function Todo() {
           <Text style={styles.todoText}>Todo</Text>
           <Button title="Add Todo" onPress={() => alert("Add Todo clicked")} />
         </View>
-        {Data.map((data) => (
-          <View key={data.id} style={styles.todomain}>
-            <View style={styles.todo}>
-              <Text style={styles.title}>{data.title}</Text>
-              <Text style={styles.desc}>{data.content}</Text>
-              <Link href={`./todo/${data.id}`} asChild>
-                <Text style={styles.read}>Read More</Text>
-              </Link>
+        {todo &&
+          todo.map((data) => (
+            <View key={data.id} style={styles.todomain}>
+              <View style={styles.todo}>
+                <Text style={styles.title}>{data.title}</Text>
+                <Text style={styles.desc}>{data.content}</Text>
+                <Link href={`./todo/${data.id}`} asChild>
+                  <Text style={styles.read}>Read More</Text>
+                </Link>
+              </View>
+              <View style={styles.todoBtn}>
+                <Pressable onPress={() => handleEdit(data.id)}>
+                  <Pencil name="edit" size={20} />
+                </Pressable>
+                <Pressable onPress={() => handleDelete(data.id)}>
+                  <DeleteOutlined name="delete" size={20} />
+                </Pressable>
+              </View>
             </View>
-            <View style={styles.todoBtn}>
-              <Pressable onPress={() => handleEdit(data)}>
-                <Pencil name="edit" size={20} />
-              </Pressable>
-              <Pressable onPress={() => handleDelete(data.id)}>
-                <DeleteOutlined name="delete" size={20} />
-              </Pressable>
-            </View>
-          </View>
-        ))}
+          ))}
       </View>
       {selectedTodo !== null && (
         <ModalView
-          modalVisible={modalVisible}
           selectedTodo={selectedTodo}
-          setTodos={setSelectedTodo}
+          modalVisible={modalVisible}
           closeModal={closeModal}
         />
       )}
