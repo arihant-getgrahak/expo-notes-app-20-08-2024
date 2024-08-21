@@ -4,7 +4,7 @@ import { Input } from "./Input";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
-import { updateTodo, getSpecificTodo } from "@/helper/api/todo";
+import { updateTodo, getSpecificTodo, deleteTodo } from "@/helper/api/todo";
 
 type Todo = {
   id: string;
@@ -21,12 +21,14 @@ interface ModalViewProps {
   selectedTodo: string;
   modalVisible: boolean;
   closeModal: () => void;
+  setUpdate: any;
 }
 
 export const ModalView: React.FC<ModalViewProps> = ({
   selectedTodo,
   modalVisible,
   closeModal,
+  setUpdate,
 }) => {
   const [data, setData] = useState<Todo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,12 +84,12 @@ export const ModalView: React.FC<ModalViewProps> = ({
       };
       const res = await updateTodo(sendData);
       if (res?.status === 200) {
-        setData(res.data.todo);
+        setUpdate(true);
+        alert("Data updated successfully");
+        closeModal();
       } else {
-        console.log(res)
         alert("Error updating data");
       }
-      closeModal();
     } catch (error) {
       alert("An error occurred while updating the todo");
     }

@@ -1,12 +1,11 @@
-import { View, Text, StyleSheet, Button, Pressable } from "react-native";
+import { View, Text, StyleSheet, Button, Pressable, Alert } from "react-native";
 import { Headertitle } from "@/components/headerTitle";
 import { Link } from "expo-router";
-import { Data } from "@/lib/PostData";
 import Pencil from "react-native-vector-icons/AntDesign";
 import DeleteOutlined from "react-native-vector-icons/AntDesign";
 import { ModalView } from "@/components/modal";
-import { SetStateAction, useEffect, useState } from "react";
-import { getAllTodo } from "@/helper/api/todo";
+import { useEffect, useState } from "react";
+import { getAllTodo, deleteTodo } from "@/helper/api/todo";
 
 type Todo = {
   id: string;
@@ -18,6 +17,8 @@ export default function Todo() {
   const [modalVisible, setModalVisible] = useState(false);
   const [todo, settodo] = useState<Todo[] | null>([]);
   const [selectedTodo, setSelectedTodo] = useState<string | null>(null);
+  const [update, setUpdate] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleEdit = (id: string) => {
     setSelectedTodo(id);
@@ -29,23 +30,43 @@ export default function Todo() {
     setSelectedTodo(null);
   };
 
-  const handleDelete = (id: string) => {
-    alert("Delete: " + id);
-    // Add deletion logic here if necessary
+  const handleDelete = async (id: string) => {
+    async function Deletetodo() {
+      const res = await deleteTodo(id);
+      console.log(res?.data);
+      if (res?.status != 200) {
+        alert("Error deleting data");
+        return;
+      }
+      alert("Data deleted successfully");
+      setUpdate(!update);
+    }
+    // alert("Delete: " + id);
+    Alert.alert("Do you want to delete this Note?", "Press OK to confirm", [
+      {
+        text: "Cancel",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
+      },
+      { text: "OK", onPress: () => Deletetodo() },
+    ]);
   };
 
   useEffect(() => {
     async function fetchAllTodo() {
+      setLoading(true);
       const res = await getAllTodo("cm03eyktp0000fshn2l5jqu70");
       if (res?.status != 200) {
         alert("Error fetching data");
+        setLoading(false);
         return;
       }
       // console.log(res?.data);
       settodo(res?.data.todos);
+      setLoading(false);
     }
     fetchAllTodo();
-  }, []);
+  }, [update]);
 
   return (
     <View style={styles.main}>
@@ -56,32 +77,39 @@ export default function Todo() {
           <Text style={styles.todoText}>Todo</Text>
           <Button title="Add Todo" onPress={() => alert("Add Todo clicked")} />
         </View>
-        {todo &&
-          todo.map((data) => (
-            <View key={data.id} style={styles.todomain}>
-              <View style={styles.todo}>
-                <Text style={styles.title}>{data.title}</Text>
-                <Text style={styles.desc}>{data.content}</Text>
-                <Link href={`./todo/${data.id}`} asChild>
-                  <Text style={styles.read}>Read More</Text>
-                </Link>
-              </View>
-              <View style={styles.todoBtn}>
-                <Pressable onPress={() => handleEdit(data.id)}>
-                  <Pencil name="edit" size={20} />
-                </Pressable>
-                <Pressable onPress={() => handleDelete(data.id)}>
-                  <DeleteOutlined name="delete" size={20} />
-                </Pressable>
-              </View>
-            </View>
-          ))}
+        {loading ? (
+          <Text>Loading...</Text>
+        ) : (
+          <>
+            {todo &&
+              todo.map((data) => (
+                <View key={data.id} style={styles.todomain}>
+                  <View style={styles.todo}>
+                    <Text style={styles.title}>{data.title}</Text>
+                    <Text style={styles.desc}>{data.content}</Text>
+                    <Link href={`./todo/${data.id}`} asChild>
+                      <Text style={styles.read}>Read More</Text>
+                    </Link>
+                  </View>
+                  <View style={styles.todoBtn}>
+                    <Pressable onPress={() => handleEdit(data.id)}>
+                      <Pencil name="edit" size={20} />
+                    </Pressable>
+                    <Pressable onPress={() => handleDelete(data.id)}>
+                      <DeleteOutlined name="delete" size={20} />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+          </>
+        )}
       </View>
       {selectedTodo !== null && (
         <ModalView
           selectedTodo={selectedTodo}
           modalVisible={modalVisible}
           closeModal={closeModal}
+          setUpdate={setUpdate}
         />
       )}
     </View>
