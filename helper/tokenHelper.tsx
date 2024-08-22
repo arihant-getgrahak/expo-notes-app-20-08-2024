@@ -29,8 +29,7 @@ export const getUserDetails = async () => {
 
 export const deleteToken = async () => {
   try {
-    const isdelete = await AsyncStorage.removeItem("authCookie");
-    console.log(isdelete);
+    await AsyncStorage.removeItem("authCookie");
   } catch (e) {
     console.log(e);
   }
@@ -38,9 +37,10 @@ export const deleteToken = async () => {
 
 export const isLogin = async () => {
   try {
-    const isLogin = await AsyncStorage.getItem("authCookie");
-    return isLogin
+    const authCookie = await AsyncStorage.getItem("authCookie");
+    return !!authCookie;
   } catch (e) {
-    console.log(e);
+    console.error("Error checking login status: ", e);
+    return false; 
   }
 };

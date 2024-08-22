@@ -1,13 +1,14 @@
 import { View, Text, StyleSheet, Button, Pressable, Alert } from "react-native";
 import { Headertitle } from "@/components/headerTitle";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import Pencil from "react-native-vector-icons/AntDesign";
 import DeleteOutlined from "react-native-vector-icons/AntDesign";
 import { ModalView } from "@/components/modal";
 import { useEffect, useState } from "react";
 import { getAllTodo, deleteTodo } from "@/helper/api/todo";
-import { getUserDetails } from "@/helper/tokenHelper";
+import { getUserDetails, deleteToken } from "@/helper/tokenHelper";
 import { AddModalView } from "@/components/addTodo";
+import { saveData, deleteData } from "@/helper/savedata";
 
 type Todo = {
   id: string;
@@ -41,6 +42,12 @@ export default function Todo() {
 
   const handleAddTodo = () => {
     setAddTodoModalVisible(!addTodoModalVisible);
+  };
+
+  const handleLogout = async () => {
+    await deleteToken();
+    await deleteData();
+    router.push("/auth/login");
   };
 
   const handleDelete = async (id: string) => {
@@ -80,6 +87,7 @@ export default function Todo() {
             return;
           }
           setTodos(res?.data.todos || []);
+          await saveData(res?.data.todos || []);
           setLoading(false);
         }
       } catch (error) {
@@ -139,6 +147,11 @@ export default function Todo() {
           closeModal={() => setAddTodoModalVisible(false)}
         />
       )}
+
+      <View style={styles.logout}>
+        <Button title="Exort to PDF" onPress={() => router.push("/g")} />
+        <Button title="Logout" onPress={handleLogout} />
+      </View>
     </View>
   );
 }
@@ -195,5 +208,9 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 10,
     marginLeft: -15,
+  },
+  logout: {
+    marginTop: 20,
+    gap: 20,
   },
 });
