@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { checkIsConnected } from "@/helper/checkNetStatus";
 import { useEffect } from "react";
-
+import { offLineDataSync } from "@/helper/offlinedatasync";
 
 export default function Index() {
   const router = useRouter();
@@ -28,13 +28,11 @@ export default function Index() {
 
   const isConnected = checkIsConnected();
 
-  useEffect(()=>{
-
-    if(!isConnected){
-      alert("You are not connected...")
+  useEffect(() => {
+    if (isConnected) {
+      offLineDataSync();
     }
-
-  },[isConnected])
+  }, [isConnected]);
 
   return (
     <View style={styles.view}>
