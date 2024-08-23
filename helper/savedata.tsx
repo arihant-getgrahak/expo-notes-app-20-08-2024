@@ -6,7 +6,16 @@ export type Todo = {
   content: string;
 };
 
-export const saveData = async(data: Todo[]) => {
+type TodoOffline = {
+  type: "post" | "update" | "delete";
+  data?: {
+    title: string;
+    content: string;
+  };
+  id: number;
+};
+
+export const saveData = async (data: Todo[]) => {
   try {
     await AsyncStorage.setItem("data", JSON.stringify(data));
   } catch (err) {
@@ -33,9 +42,36 @@ export const deleteData = async () => {
   }
 };
 
-export const saveQueue = async (data: Todo[]) => {
+export const saveQueue = async (data: TodoOffline) => {
   try {
-    await AsyncStorage.setItem("queue", JSON.stringify(data));
+    const value = await AsyncStorage.getItem("queue");
+    if (value !== null) {
+      const queue = JSON.parse(value);
+      queue.push(data);
+      await AsyncStorage.setItem("queue", JSON.stringify(queue));
+    } else {
+      const queue = [data];
+      await AsyncStorage.setItem("queue", JSON.stringify(queue));
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const getQueue = async () => {
+  try {
+    const value = await AsyncStorage.getItem("queue");
+    if (value !== null) {
+      return value;
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const deleteQueue = async () => {
+  try {
+    await AsyncStorage.removeItem("queue");
   } catch (err) {
     console.log(err);
   }

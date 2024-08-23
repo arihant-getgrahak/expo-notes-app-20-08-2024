@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FieldValue, FieldValues, useForm } from "react-hook-form";
 import { createTodo } from "@/helper/api/todo";
 import { getUserDetails } from "@/helper/tokenHelper";
+import { checkIsConnected } from "@/helper/checkNetStatus";
+import { saveQueue } from "@/helper/savedata";
 
 const schema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -24,6 +26,7 @@ export const AddModalView: React.FC<ModalViewProps> = ({
   setUpdate,
 }) => {
   const [loading, setLoading] = useState(false);
+  const isConnected = checkIsConnected();
 
   const {
     control,
@@ -38,23 +41,37 @@ export const AddModalView: React.FC<ModalViewProps> = ({
     setLoading(true);
     try {
       const user = await getUserDetails();
-      const sendData = {
-        title: data.title,
-        content: data.content,
-        userId: user?.id,
-      };
+      if (isConnected) {
+        const sendData = {
+          title: data.title,
+          content: data.content,
+          userId: user?.id,
+        };
 
-      const res = await createTodo(sendData);
-      console.log(res?.data)
+        const res = await createTodo(sendData);
+        console.log(res?.data);
 
-      if (res?.status !== 200) {
-        alert("Error adding data");
-        return;
+        if (res?.status !== 200) {
+          alert("Error adding data");
+          return;
+        }
+
+        setUpdate((prev) => !prev);
+        reset();
+        closeModal();
+      } else {
+        await saveQueue({
+          type: "post",
+          data: {
+            title: data.title,
+            content: data.content,
+          },
+          id: user?.id,
+        });
+        setUpdate((prev) => !prev);
+        reset();
+        closeModal();
       }
-
-      setUpdate((prev) => !prev);
-      reset();
-      closeModal();
     } catch (error) {
       alert("An error occurred");
     } finally {

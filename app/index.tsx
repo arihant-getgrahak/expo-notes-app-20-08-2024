@@ -3,18 +3,18 @@ import { Headertitle } from "@/components/headerTitle";
 import { Link } from "expo-router";
 import { isLogin } from "@/helper/tokenHelper";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { checkIsConnected } from "@/helper/checkNetStatus";
+import { useEffect } from "react";
+
 
 export default function Index() {
-  const [islogin, setIsLogin] = useState<boolean | undefined>(undefined);
   const router = useRouter();
 
   useFocusEffect(() => {
     async function checkIsLogin() {
       try {
         const login = await isLogin();
-        setIsLogin(login);
         if (login) {
           router.push("/(todo)");
         }
@@ -24,11 +24,17 @@ export default function Index() {
     }
 
     checkIsLogin();
-
-    if (islogin) {
-      router.push("/(todo)");
-    }
   });
+
+  const isConnected = checkIsConnected();
+
+  useEffect(()=>{
+
+    if(!isConnected){
+      alert("You are not connected...")
+    }
+
+  },[isConnected])
 
   return (
     <View style={styles.view}>

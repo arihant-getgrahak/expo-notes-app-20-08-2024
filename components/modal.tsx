@@ -3,8 +3,10 @@ import { Modal, StyleSheet, View, Text, Button } from "react-native";
 import { Input } from "./Input";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
-import { updateTodo, getSpecificTodo, deleteTodo } from "@/helper/api/todo";
+import { useForm } from "react-hook-form";
+import { updateTodo, getSpecificTodo } from "@/helper/api/todo";
+import { checkIsConnected } from "@/helper/checkNetStatus";
+import { getData, saveQueue } from "@/helper/savedata";
 
 type Todo = {
   id: string;
@@ -32,26 +34,40 @@ export const ModalView: React.FC<ModalViewProps> = ({
 }) => {
   const [data, setData] = useState<Todo | null>(null);
   const [loading, setLoading] = useState(false);
+  const isConnected = checkIsConnected();
 
   useEffect(() => {
-    const fetchSpecificTodo = async () => {
-      setLoading(true);
-      try {
-        const res = await getSpecificTodo(selectedTodo);
-        if (res?.status === 200) {
-          setData(res.data.todo);
-        } else {
-          alert("Error fetching data");
+    if (isConnected) {
+      const fetchSpecificTodo = async () => {
+        setLoading(true);
+        try {
+          const res = await getSpecificTodo(selectedTodo);
+          if (res?.status === 200) {
+            setData(res.data.todo);
+          } else {
+            alert("Error fetching data");
+          }
+        } catch (error) {
+          alert("An error occurred");
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        alert("An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    if (selectedTodo) {
-      fetchSpecificTodo();
+      if (selectedTodo) {
+        fetchSpecificTodo();
+      }
+    } else {
+      const fetchSpecificTodofromLocal = async () => {
+        const data = await getData();
+        if (data) {
+          const findData = data.find((item: Todo) => item.id === selectedTodo);
+          if (findData) {
+            setData(findData);
+          }
+        }
+      };
+      fetchSpecificTodofromLocal();
     }
   }, [selectedTodo]);
 
@@ -77,18 +93,34 @@ export const ModalView: React.FC<ModalViewProps> = ({
 
   const onSubmit = async (formData: z.infer<typeof schema>) => {
     try {
-      const sendData = {
-        title: formData.title,
-        content: formData.content,
-        titleId: selectedTodo,
-      };
-      const res = await updateTodo(sendData);
-      if (res?.status === 200) {
-        setUpdate(true);
+      setLoading(true);
+      if (isConnected) {
+        {
+          const sendData = {
+            title: formData.title,
+            content: formData.content,
+            titleId: selectedTodo,
+          };
+          const res = await updateTodo(sendData);
+          if (res?.status === 200) {
+            setUpdate(true);
+            alert("Data updated successfully");
+            closeModal();
+          } else {
+            alert("Error updating data");
+          }
+        }
+      } else {
+        await saveQueue({
+          type: "update",
+          id: Number(selectedTodo),
+          data: {
+            title: formData.title,
+            content: formData.content,
+          },
+        });
         alert("Data updated successfully");
         closeModal();
-      } else {
-        alert("Error updating data");
       }
     } catch (error) {
       alert("An error occurred while updating the todo");

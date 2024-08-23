@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 import { getAllTodo, deleteTodo } from "@/helper/api/todo";
 import { getUserDetails, deleteToken } from "@/helper/tokenHelper";
 import { AddModalView } from "@/components/addTodo";
-import { saveData, deleteData } from "@/helper/savedata";
+import { saveData, deleteData, getData, saveQueue } from "@/helper/savedata";
+import { checkIsConnected } from "@/helper/checkNetStatus";
 
 type Todo = {
   id: string;
@@ -20,6 +21,11 @@ type User = {
   name: string;
   email: string;
 };
+type TodoOffline = {
+  type: "post" | "update" | "delete";
+  data?: Todo;
+  id: number;
+};
 
 export default function Todo() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -29,6 +35,8 @@ export default function Todo() {
   const [update, setUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+
+  const isConnected = checkIsConnected();
 
   const handleEdit = (id: string) => {
     setSelectedTodo(id);
@@ -57,10 +65,19 @@ export default function Todo() {
         text: "OK",
         onPress: async () => {
           try {
-            const res = await deleteTodo(id);
-            if (res?.status !== 200) {
-              Alert.alert("Error", "Failed to delete the todo.");
-              return;
+            if (isConnected) {
+              const res = await deleteTodo(id);
+              if (res?.status !== 200) {
+                console.log(res?.data);
+                Alert.alert("Error", "Failed to delete the todo.");
+                return;
+              }
+            } else {
+              Alert.alert("Error", "No internet connection");
+              await saveQueue({
+                type: "delete",
+                id: Number(id),
+              });
             }
             Alert.alert("Success", "Todo deleted successfully.");
             setUpdate(!update);
@@ -73,30 +90,40 @@ export default function Todo() {
   };
 
   useEffect(() => {
-    const fetchUserDetailsAndTodos = async () => {
-      try {
-        const userDetails = await getUserDetails();
-        setUser(userDetails);
+    if (isConnected) {
+      const fetchUserDetailsAndTodos = async () => {
+        try {
+          const userDetails = await getUserDetails();
+          setUser(userDetails);
 
-        if (userDetails?.id) {
-          setLoading(true);
-          const res = await getAllTodo(userDetails.id);
-          if (res?.status !== 200) {
-            alert(res?.data.error);
+          if (userDetails?.id) {
+            setLoading(true);
+            const res = await getAllTodo(userDetails.id);
+            if (res?.status !== 200) {
+              alert(res?.data.error);
+              setLoading(false);
+              return;
+            }
+            setTodos(res?.data.todos || []);
+            await saveData(res?.data.todos || []);
             setLoading(false);
-            return;
           }
-          setTodos(res?.data.todos || []);
-          await saveData(res?.data.todos || []);
+        } catch (error) {
+          Alert.alert("Error", "An unexpected error occurred.");
           setLoading(false);
         }
-      } catch (error) {
-        Alert.alert("Error", "An unexpected error occurred.");
-        setLoading(false);
-      }
-    };
+      };
+      fetchUserDetailsAndTodos();
+    } else {
+      const fetchTodofromLocal = async () => {
+        const res = await getData();
+        if (res) {
+          setTodos(res);
+        }
+      };
 
-    fetchUserDetailsAndTodos();
+      fetchTodofromLocal();
+    }
   }, [update]);
 
   return (

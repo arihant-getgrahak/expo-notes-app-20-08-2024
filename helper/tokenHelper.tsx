@@ -38,9 +38,12 @@ export const deleteToken = async () => {
 export const isLogin = async () => {
   try {
     const authCookie = await AsyncStorage.getItem("authCookie");
-    return !!authCookie;
+    if (authCookie) {
+      return authCookie;
+    }
+    return false;
   } catch (e) {
     console.error("Error checking login status: ", e);
-    return false; 
+    return false;
   }
 };
